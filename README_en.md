@@ -140,9 +140,23 @@ You can start the project with the following commands. Use the `Nav2 Goal` plugi
 
 #### 2.3.1 Simulation
 
+**Startup order (important):**
+
+1. **Start Gazebo first**: `ros2 launch rmu_gazebo_simulator bringup_sim.launch.py`
+2. **Press Play** in the Gazebo window to start the simulation.
+3. **Wait 5–10 seconds** so the world and robot are running and LiDAR/IMU topics are publishing.
+4. **Then** start the navigation stack (see below). If you start the nav stack before the sim is running, the TF tree may stay disconnected and the controller can fail to activate.
+
 Single Robot:
 
-Navigation mode：
+**SLAM mode** (recommended when you do not have a map yet; builds the map as you drive):
+
+```bash
+ros2 launch pb2025_nav_bringup rm_navigation_simulation_launch.py \
+slam:=True
+```
+
+Navigation mode (use when you already have a map and prior PCD; requires valid `world` and prior PCD file):
 
 ```bash
 ros2 launch pb2025_nav_bringup rm_navigation_simulation_launch.py \
@@ -150,14 +164,7 @@ world:=rmuc_2025 \
 slam:=False
 ```
 
-SLAM mode：
-
-```bash
-ros2 launch pb2025_nav_bringup rm_navigation_simulation_launch.py \
-slam:=True
-```
-
-Save map：`ros2 run nav2_map_server map_saver_cli -f <YOUR_MAP_NAME>  --ros-args -r __ns:=/red_standard_robot1`
+Save map (after building a map in SLAM mode)：`ros2 run nav2_map_server map_saver_cli -f <YOUR_MAP_NAME>  --ros-args -r __ns:=/red_standard_robot1`
 
 Navigation mode:
 
@@ -231,3 +238,11 @@ Launch arguments are largely common to both simulation and physical robot. Howev
 By default, PS4 controller support is enabled. The key mapping can be found in the `teleop_twist_joy_node` section of [nav2_params.yaml](./pb2025_nav_bringup/config/simulation/nav2_params.yaml).
 
 ![teleop_twist_joy.gif](https://raw.githubusercontent.com/LihanChen2004/picx-images-hosting/master/teleop_twist_joy.5j4aav3v3p.gif)
+
+### 2.7 Troubleshooting (simulation)
+
+- **"Could not find a connection between 'odom' and 'gimbal_yaw_fake'" / "Tf has two or more unconnected trees"**  
+  The nav stack needs `odom` from the LiDAR pipeline (point_lio → loam_interface → sensor_scan_generation). Start **Gazebo first**, press **Play**, wait **5–10 seconds** for the sim and sensors to run, then start the nav launch. Using **SLAM mode** (`slam:=True`) also avoids depending on small_gicp for the map→odom link.
+
+- **Nav stack crashes with "Magick: abort" or "target point cloud is too small"**  
+  You are in navigation mode with no or invalid prior PCD. Use **SLAM mode** (`slam:=True`) when you do not have a map yet, or ensure the `world` and prior PCD path are correct and the file exists.

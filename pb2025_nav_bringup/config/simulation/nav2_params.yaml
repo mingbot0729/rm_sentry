@@ -596,8 +596,8 @@ pb_teleop_twist_joy_node:
 
     axis_gimbal:
       roll: -1                    # Disable
-      pitch: 4                    # Right thumb stick vertical
-      yaw: 3                      # Right thumb stick horizontal
+      pitch: 4                    # Right stick vertical; keyboard: Up/Down arrows
+      yaw: 3                      # Right stick horizontal; keyboard: Left/Right arrows
     scale_gimbal:
       roll: 0.0
       pitch: -1.0

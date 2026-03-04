@@ -17,26 +17,38 @@ import os
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, GroupAction
-from launch.substitutions import LaunchConfiguration
+from launch.actions import DeclareLaunchArgument, ExecuteProcess, GroupAction
+from launch.conditions import IfCondition, UnlessCondition
+from launch.substitutions import LaunchConfiguration, PythonExpression
 from launch_ros.actions import Node, PushRosNamespace, SetRemap
 from launch_ros.descriptions import ParameterFile
 from nav2_common.launch import RewrittenYaml
 
 
 def generate_launch_description():
-    # Get the package directory
+    # Get the package directory and run script path
     bringup_dir = get_package_share_directory("pb2025_nav_bringup")
+    pkg_install_dir = os.path.dirname(os.path.dirname(bringup_dir))
+    run_key_to_joy_script = os.path.join(
+        pkg_install_dir, "lib", "pb2025_nav_bringup", "run_key_to_joy.sh"
+    )
 
     # Create the launch configuration variables
     namespace = LaunchConfiguration("namespace")
     use_sim_time = LaunchConfiguration("use_sim_time")
+    use_keyboard = LaunchConfiguration("use_keyboard")
     joy_vel = LaunchConfiguration("joy_vel")
     joy_dev = LaunchConfiguration("joy_dev")
     joy_config_file = LaunchConfiguration("joy_config_file")
 
     # Create our own temporary YAML files that include substitutions
-    param_substitutions = {"use_sim_time": use_sim_time}
+    # When use_keyboard: require_enable_button=false (always enabled, no Space needed)
+    param_substitutions = {
+        "use_sim_time": use_sim_time,
+        "pb_teleop_twist_joy_node.ros__parameters.require_enable_button": PythonExpression(
+            ["'false' if '", use_keyboard, "' == 'true' else 'true'"]
+        ),
+    }
 
     configured_params = ParameterFile(
         RewrittenYaml(
@@ -79,6 +91,21 @@ def generate_launch_description():
         "joy_dev", default_value="0", description="The joystick device ID"
     )
 
+    declare_use_keyboard_cmd = DeclareLaunchArgument(
+        "use_keyboard",
+        default_value="false",
+        description="Use keyboard (arrow keys) instead of physical joystick for gimbal control",
+    )
+
+    # When use_keyboard: run key_to_joy in a new terminal (needs TTY). Publishes to /joy.
+    # Use run_key_to_joy.sh which sources itself (spawned terminal doesn't inherit env).
+    run_key_to_joy_cmd = ExecuteProcess(
+        cmd=["x-terminal-emulator", "-e", run_key_to_joy_script],
+        output="screen",
+        condition=IfCondition(use_keyboard),
+        additional_env={"KEYBOARD_NS": namespace},
+    )
+
     bringup_cmd_group = GroupAction(
         [
             PushRosNamespace(namespace=namespace),
@@ -96,6 +123,7 @@ def generate_launch_description():
                         "autorepeat_rate": 20.0,
                     }
                 ],
+                condition=UnlessCondition(use_keyboard),
             ),
             Node(
                 package="pb_teleop_twist_joy",
@@ -118,11 +146,13 @@ def generate_launch_description():
     # Declare the launch options
     ld.add_action(declare_namespace_cmd)
     ld.add_action(declare_use_sim_time_cmd)
+    ld.add_action(declare_use_keyboard_cmd)
     ld.add_action(declare_joy_vel_cmd)
     ld.add_action(declare_joy_config_file_cmd)
     ld.add_action(declare_joy_dev_cmd)
 
     # Add the actions to launch the nodes
+    ld.add_action(run_key_to_joy_cmd)
     ld.add_action(bringup_cmd_group)
 
     return ld
