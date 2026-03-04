@@ -33,15 +33,20 @@ from sensor_msgs.msg import Joy
 
 
 msg = """
-Keyboard to Joy (Gimbal yaw only)
----------------------------------
-  Left/Right  : gimbal yaw (axis 3)
+Keyboard to Joy — Gimbal yaw only (no joystick)
+------------------------------------------------
+  Left arrow  : gimbal yaw left
+  Right arrow : gimbal yaw right
   q           : quit
----------------------------------
+------------------------------------------------
 """
 
-KEY_LEFT = "\x1b[D"
-KEY_RIGHT = "\x1b[C"
+# Arrow key escape sequences (different terminals use different codes)
+KEY_LEFT = "\x1b[D"       # Standard: ESC [ D
+KEY_RIGHT = "\x1b[C"      # Standard: ESC [ C
+KEY_LEFT_ALT = "\x1bOD"  # Older xterm: ESC O D
+KEY_RIGHT_ALT = "\x1bOC"  # Older xterm: ESC O C
+ENABLE_BUTTON_IDX = 4     # Matches enable_button: 4 in nav2_params
 
 
 def get_key(settings, timeout=0.05):
@@ -82,10 +87,11 @@ def main():
 
     print(msg)
 
-    # Joy: axes[3]=yaw (-1 left, +1 right) only
+    # Joy: axes[3]=yaw (-1 left, +1 right). buttons[4]=enable (always pressed for keyboard).
     joy_msg = Joy()
     joy_msg.axes = [0.0] * 8
     joy_msg.buttons = [0] * 8
+    joy_msg.buttons[ENABLE_BUTTON_IDX] = 1  # Simulate enable button so teleop accepts input
 
     IDLE_TIMEOUT = 0.15  # Zero yaw after this many seconds with no key
     last_key_time = node.get_clock().now().nanoseconds / 1e9
@@ -98,10 +104,10 @@ def main():
 
             if key == "q" or key == "Q" or key == "\x03":
                 break
-            elif key == KEY_LEFT:
+            elif key in (KEY_LEFT, KEY_LEFT_ALT):
                 joy_msg.axes[3] = -1.0
                 last_key_time = now
-            elif key == KEY_RIGHT:
+            elif key in (KEY_RIGHT, KEY_RIGHT_ALT):
                 joy_msg.axes[3] = 1.0
                 last_key_time = now
             elif key is not None:
