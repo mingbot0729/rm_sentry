@@ -68,7 +68,7 @@ Visualization Manager:
       Length: 0.699999988079071
       Name: GimbalYawFake
       Radius: 0.10000000149011612
-      Reference Frame: gimbal_yaw_fake
+      Reference Frame: gimbal_yaw
       Value: false
     - Alpha: 1
       Autocompute Intensity Bounds: true
