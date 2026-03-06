@@ -3,7 +3,7 @@ ign_sim_pointcloud_tool:
     pcd_topic: livox/lidar
     n_scan: 32
     horizon_scan: 1875
-    ang_bottom: 52.0                      # flipped LiDAR: vertical range -52° to 7° (was -7° to 52°)
+    ang_bottom: 7.0                      # flipped LiDAR: vertical range -52° to 7° (was -7° to 52°)
     ang_res_y: 1.84375                    # (7+52) / 32
 
 point_lio:
