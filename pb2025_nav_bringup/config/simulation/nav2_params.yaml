@@ -2,7 +2,7 @@ ign_sim_pointcloud_tool:
   ros__parameters:
     pcd_topic: livox/lidar
     n_scan: 32
-    horizon_scan: 1500
+    horizon_scan: 1875
     ang_bottom: 52.0                      # flipped LiDAR: vertical range -52° to 7° (was -7° to 52°)
     ang_res_y: 1.84375                    # (7+52) / 32
 
@@ -12,10 +12,10 @@ point_lio:
     prop_at_freq_of_imu: True
     check_satu: True
     init_map_size: 10
-    point_filter_num: 16                                # Options: 4, 3
+    point_filter_num: 8                           # Options: 4, 3
     space_down_sample: True
-    filter_size_surf: 0.3                               # Options: 0.5, 0.3, 0.2, 0.15, 0.1
-    filter_size_map: 0.3                                # Options: 0.5, 0.3, 0.15, 0.1
+    filter_size_surf: 0.2                               # Options: 0.5, 0.3, 0.2, 0.15, 0.1
+    filter_size_map: 0.2                                # Options: 0.5, 0.3, 0.15, 0.1
     ivox_nearby_type: 18                                # Options: 0, 6, 18, 26
     runtime_pos_log_enable: False                       # Option: True
 
@@ -24,7 +24,7 @@ point_lio:
       imu_topic: "livox/imu"
       con_frame: False                                  # True: if you need to combine several LiDAR frames into one
       con_frame_num: 1                                  # the number of frames combined
-      cut_frame: True                                   # True: if you need to cut one LiDAR frame into several subframes
+      cut_frame: False                                  # True: if you need to cut one LiDAR frame into several subframes
       cut_frame_time_interval: 0.05                     # should be integral fraction of 1 / LiDAR frequency
       time_diff_lidar_to_imu: 0.0                       # Time offset between LiDAR and IMU calibrated by other algorithms, e.g., LI-Init (find in Readme)
 
@@ -99,7 +99,7 @@ sensor_scan_generation:
 
 terrain_analysis:
   ros__parameters:
-    scanVoxelSize: 0.08                 # 点云下采样
+    scanVoxelSize: 0.05                 # 点云下采样
     decayTime: 0.5                      # 点云时间差阈值 大于则不会被处理
     noDecayDis: 0.0                     # 点云距离阈值 小于该阈值不考虑时间差
     clearingDis: 0.0                    # 该距离外的点会被清除
